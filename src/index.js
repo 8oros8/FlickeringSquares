@@ -8,7 +8,13 @@ import './index.css';
 let timeoutStorage = []
 
 class Square extends React.Component {
+    state = {
+        squareDisabled: this.props.squareDisabled
+    }
     activateButton = function (e) {
+        if (timeoutStorage.length > 0) {
+            return
+        }
         if (this.props.flickeringMemory.length > 0) {
             if ((parseInt(this.props.flickeringMemory[0].id[0]) === this.props.coords[0]) && (parseInt(this.props.flickeringMemory[0].id[2]) === this.props.coords[1])) {
                 e.target.style.backgroundColor = 'white'
@@ -43,7 +49,7 @@ class Square extends React.Component {
     activateButton = this.activateButton.bind(this)
     render() {
         return (
-            <button className="square" id={this.props.coords[0] + ":" + this.props.coords[1]} onClick={this.activateButton}>
+            <button disabled={this.state.squareDisabled} className="square" id={this.props.coords[0] + ":" + this.props.coords[1]} onClick={this.activateButton}>
                 {this.props.value}
             </button>
         );
@@ -60,6 +66,7 @@ class Row extends React.Component {
                                      levelPassed = {this.props.levelPassed}
                                      updateLevelStatus = {this.props.updateLevelStatus}
                                      updateMistakeStatus = {this.props.updateMistakeStatus}
+                                     squareDisabled = {this.props.squareDisabled}
             />)
         }
         return renderArray
@@ -83,6 +90,7 @@ class Board extends React.Component {
         numberRows: 3,
         numberColumns: 3,
         complexity: 2,
+        squareDisabled: false
     }
     componentDidUpdate(prevProps, prevState, snapshot) {
         if ((prevState.mistakeMade === false) && (this.state.mistakeMade === true)) {
@@ -139,6 +147,7 @@ class Board extends React.Component {
         for (let timeoutId of timeoutStorage) {
             clearTimeout(timeoutId)
         }
+        timeoutStorage.slice(0, timeoutStorage.length)
         for (let square of document.querySelectorAll('.square')) {
             square.style.background = '#799E00'
         }
@@ -150,6 +159,7 @@ class Board extends React.Component {
             complexity: 2,
             numberColumns: 3,
             numberRows: 3,
+            squareDisabled: false
         })
     }
     resetClickHandler = this.resetClickHandler.bind(this)
@@ -165,9 +175,15 @@ class Board extends React.Component {
                 updateMistakeStatus = {this.updateMistakeStatus}
                 numberRows = {this.state.numberRows}
                 numberColumns = {this.state.numberColumns}
+                squareDisabled = {this.state.squareDisabled}
             />)
         }
         return renderArray
+    }
+    updateSquaresStatus = (value) => {
+        this.setState({
+            squaresDisabled: value
+        })
     }
     randomFlicker = function (squaresArray) {
         let elementsArray = squaresArray.length === 0 ? Array.from(document.getElementById('root').querySelectorAll('.square')) : squaresArray
@@ -188,6 +204,7 @@ class Board extends React.Component {
 
     startFlickering = function () {
         let flickeringArray = this.randomFlicker(this.state.squaresArray)
+        this.updateSquaresStatus(true)
         for (let i = 0; i < flickeringArray.length; i++) {
             let timeout = i === 0? 0 : i * 1500
             let firstTimeoutId = setTimeout(function () {
@@ -199,6 +216,13 @@ class Board extends React.Component {
             }, timeout+900)
             timeoutStorage.push(secondTimeoutId)
         }
+        let enableButtonsTimeout = (flickeringArray.length - 1) * 1500 + 900
+        setTimeout(function () {
+            for (let timeoutId of timeoutStorage) {
+                clearTimeout(timeoutId)
+            }
+            timeoutStorage.splice(0, timeoutStorage.length)
+        }, enableButtonsTimeout)
         return flickeringArray
     }
     startFlickering = this.startFlickering.bind(this)
